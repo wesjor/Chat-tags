@@ -1,0 +1,180 @@
+--[[SETTINGS]]--
+local VIPGamepass=nil 
+local GroupID=nil
+local OwnerTag={"Username1","Username2"}
+local DeveloperTag={"Username1","Username2"}
+local AdminTag={"Username1","Username2"}
+--[[]]--
+local function SetupTags()
+	spawn(function()
+		local ChatService = require(game:GetService("ServerScriptService"):WaitForChild("ChatServiceRunner"):WaitForChild("ChatService"))
+		local Tags = {
+			[1] = {
+				-- Owner Checker
+				['CheckValidity']=function(Player)
+					if not Player then return end
+					if Player.ChatTagStorage:FindFirstChild("Owner") then
+						return {
+							--[[Chat Tag]]--
+							{
+								TagText=[[👨‍💼 ]]..[[OWNER]],
+								TagColor=Color3.fromRGB(50, 243, 201)	
+							},
+							--[[PlayerName Colour]]
+							Color3.fromRGB(50, 243, 201)
+						}
+					end
+				end,
+			},
+			[2] = {
+				-- Developer Checker
+				['CheckValidity']=function(Player)
+					if not Player then return end
+					if Player.ChatTagStorage:FindFirstChild("Developer") then
+						return {
+							--[[Chat Tag]]--
+							{
+								TagText=[[🛠️ ]]..[[DEVELOPER]],
+								TagColor=Color3.fromRGB(243, 154, 236)	
+							},
+							--[[PlayerName Colour]]
+							Color3.fromRGB(243, 154, 236)
+						}
+					end
+				end,
+			},
+			[3] = {
+				-- Admin Checker
+				['CheckValidity']=function(Player)
+					if not Player then return end
+					if Player.ChatTagStorage:FindFirstChild("Admin") then
+						return {
+							--[[Chat Tag]]--
+							{
+								TagText=[[🛡️ ]]..[[ADMIN]],
+								TagColor=Color3.fromRGB(243, 119, 127)	
+							},
+							--[[PlayerName Colour]]
+							Color3.fromRGB(243, 119, 127)
+						}
+					end
+				end,
+			},
+			[4] = {
+				-- VIP Checker
+				['CheckValidity']=function(Player)
+					if not Player then return end
+					if Player.ChatTagStorage:FindFirstChild("VIP") then
+						return {
+							--[[Chat Tag]]--
+							{
+								TagText=[[👑 ]]..[[VIP]],
+								TagColor=Color3.fromRGB(243, 235, 8)	
+							},
+							--[[PlayerName Colour]]
+							Color3.fromRGB(243, 235, 8)
+						}
+					end
+				end,
+			},
+			[5] = {
+				-- Group Checker
+				['CheckValidity']=function(Player)
+					if not Player then return end
+					if Player.ChatTagStorage:FindFirstChild("GroupMember") then
+						return {
+							--[[Chat Tag]]--
+							{
+								TagText=[[Fan]],
+								TagColor=Color3.fromRGB(88, 243, 71)	
+							},
+							--[[PlayerName Colour]]
+							nil 
+						}
+					end
+				end,
+			},
+		}
+		ChatService.SpeakerAdded:Connect(function(PlayerName)
+			local speaker = ChatService:GetSpeaker(PlayerName)
+			local Player = game:GetService("Players")[PlayerName]
+			--[[]]--
+			local function UpdatePlayerTag()
+				local TagData=nil
+				local NameColourData=nil
+				for i=1,#Tags do 
+					local Table=Tags[i]
+					local Data=Table['CheckValidity'](Player)
+					if Data then
+						TagData=Data[1]
+						NameColourData=Data[2]
+						break
+					end
+				end
+				--[[]]--
+				if TagData then
+					if NameColourData then
+						speaker:SetExtraData("NameColor", 
+							NameColourData
+						)
+					end
+					speaker:SetExtraData("Tags",{
+						TagData
+					})
+				end
+			end
+			--[[]]--
+			local MessageCount=0
+			local UpdateEvery=2
+			Player.Chatted:Connect(function()
+				if MessageCount>=UpdateEvery then MessageCount=0 
+					UpdatePlayerTag()
+				elseif MessageCount==0 then UpdatePlayerTag()
+				end
+				MessageCount=MessageCount+1
+			end)
+			--[[]]--
+		end)
+	end)
+end
+game:GetService("Players").PlayerAdded:Connect(function(Player)
+	local ChatTagStorage=Instance.new("Folder")
+	ChatTagStorage.Name="ChatTagStorage"
+	ChatTagStorage.Parent=Player
+	local function Create(Name)
+		local Value=Instance.new("StringValue")
+		Value.Name=Name
+		Value.Parent=ChatTagStorage		
+	end
+	for i, v in pairs(OwnerTag) do 
+		local lowerv=string.lower(v)
+		local loweru=string.lower(Player.Name)
+		if lowerv==loweru then
+			Create("Owner")
+			break
+		end	
+	end
+	for i, v in pairs(DeveloperTag) do 
+		local lowerv=string.lower(v)
+		local loweru=string.lower(Player.Name)
+		if lowerv==loweru then
+			Create("Developer")
+			break
+		end
+	end
+	for i, v in pairs(AdminTag) do 
+		local lowerv=string.lower(v)
+		local loweru=string.lower(Player.Name)
+		if lowerv==loweru then
+			Create("Admin")
+			break
+		end
+	end
+	if VIPGamepass~=nil and game:GetService("MarketplaceService"):UserOwnsGamePassAsync(Player.UserId,VIPGamepass) then
+		Create("VIP")
+	end
+	if GroupID~=nil and Player:IsInGroup(GroupID) then
+		Create("GroupMember")
+	end
+end)
+SetupTags()
